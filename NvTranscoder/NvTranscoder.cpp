@@ -59,6 +59,7 @@ void PrintHelp()
     printf("Usage : NvTranscoder \n"
         "-i <string>                  Specify input .h264 file\n"
         "-o <string>                  Specify output bitstream file\n"
+       "-fps <float>                  Specify encoding frame rate\n"
         "\n### Optional parameters ###\n"
         "-size <int int>              Specify output resolution <width height>\n"
         "-codec <integer>             Specify the codec \n"
@@ -70,7 +71,6 @@ void PrintHelp()
         "                                 lowLatencyHP : nvenc low latency HP \n"
         "                                 lowLatencyHQ : nvenc low latency HQ \n"
         "                                 lossless : nvenc Lossless HP \n"
-        "-fps <integer>               Specify encoding frame rate\n"
         "-goplength <integer>         Specify gop length\n"
         "-numB <integer>              Specify number of B frames\n"
         "-bitrate <integer>           Specify the encoding average bitrate\n"
@@ -112,8 +112,9 @@ int main(int argc, char* argv[])
     encodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
     encodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
     encodeConfig.codec = NV_ENC_H264;
-    encodeConfig.fps = 0;
     encodeConfig.qp = 28;
+	encodeConfig.frameRateNum = 25000;
+	encodeConfig.frameRateDen = 1000;
     encodeConfig.i_quant_factor = DEFAULT_I_QFACTOR;
     encodeConfig.b_quant_factor = DEFAULT_B_QFACTOR;  
     encodeConfig.i_quant_offset = DEFAULT_I_QOFFSET;
@@ -128,7 +129,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    if (!encodeConfig.inputFileName || !encodeConfig.outputFileName)
+    if (!encodeConfig.inputFileName || !encodeConfig.outputFileName || !encodeConfig.fps)
     {
         PrintHelp();
         return 1;
@@ -195,8 +196,10 @@ int main(int argc, char* argv[])
     printf("         bitrate         : %d bits/sec\n", encodeConfig.bitrate);
     printf("         vbvMaxBitrate   : %d bits/sec\n", encodeConfig.vbvMaxBitrate);
     printf("         vbvSize         : %d bits\n", encodeConfig.vbvSize);
-    printf("         fps             : %d frames/sec\n", encodeConfig.fps);
-    printf("         rcMode          : %s\n", encodeConfig.rcMode == NV_ENC_PARAMS_RC_CONSTQP ? "CONSTQP" :
+	printf("         fps             : %s frames/sec\n", encodeConfig.fps);
+	printf("         fpsRateNum      : %d frames\n", encodeConfig.frameRateNum);
+	printf("         fpsRateDen      : %d sec\n", encodeConfig.frameRateDen);
+	printf("         rcMode          : %s\n", encodeConfig.rcMode == NV_ENC_PARAMS_RC_CONSTQP ? "CONSTQP" :
         encodeConfig.rcMode == NV_ENC_PARAMS_RC_VBR ? "VBR" :
         encodeConfig.rcMode == NV_ENC_PARAMS_RC_CBR ? "CBR" :
         encodeConfig.rcMode == NV_ENC_PARAMS_RC_VBR_MINQP ? "VBR MINQP" :
