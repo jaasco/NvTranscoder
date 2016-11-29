@@ -73,7 +73,6 @@ CudaDecoder::CudaDecoder() : m_videoSource(NULL), m_videoParser(NULL), m_videoDe
 {
 }
 
-
 CudaDecoder::~CudaDecoder(void)
 {
     if(m_videoDecoder) cuvidDestroyDecoder(m_videoDecoder);

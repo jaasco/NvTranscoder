@@ -145,12 +145,14 @@
     <ClCompile Include="..\common\src\NvHWEncoder.cpp" />
     <ClCompile Include="FrameQueue.cpp" />
     <ClCompile Include="NvTranscoder.cpp" />
+    <ClCompile Include="StreamCudaDecoder.cpp" />
     <ClCompile Include="VideoEncoder.cpp" />
     <ClCompile Include="VideoDecoder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\inc\NvHWEncoder.h" />
     <ClInclude Include="FrameQueue.h" />
+    <ClInclude Include="StreamCudaDecoder.h" />
     <ClInclude Include="VideoEncoder.h" />
     <ClInclude Include="VideoDecoder.h" />
   </ItemGroup>

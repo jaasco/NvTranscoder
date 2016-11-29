@@ -71,8 +71,7 @@ inline bool nvReadFile(HANDLE hInputFile, void *buf, U32 bytes_to_read, U32 *byt
     return true;
 #elif defined __linux || defined __APPLE__ || defined __MACOSX
     U32 elems_read;
-    elems_read = fread(buf, bytes_to_read, 1, (FILE *)hInputFile);
-
+    elems_read = fread(buf, 1, bytes_to_read, (FILE *)hInputFile);
     if (bytes_read)
     {
         *bytes_read = elems_read > 0 ? bytes_to_read : 0;
@@ -115,6 +114,10 @@ inline HANDLE nvOpenFile(const char *input_file)
     HANDLE hInput = NULL;
 
 #if defined (NV_WINDOWS)
+	if (!strcmp(input_file, "-"))
+	{
+		hInput = INVALID_HANDLE_VALUE;
+	}
     hInput = CreateFileA(input_file, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING , FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (hInput == INVALID_HANDLE_VALUE)
@@ -124,7 +127,15 @@ inline HANDLE nvOpenFile(const char *input_file)
     }
 
 #elif defined __linux || defined __APPLE_ || defined __MACOSX
+
+	if (!strcmp(input_file,"-"))
+	{
+		printf("Open stdin\n");
+		hInput = freopen(NULL, "rb", stdin);
+	} else 
+	{
     hInput = fopen(input_file, "rb");
+	}
 
     if (hInput == NULL)
     {
