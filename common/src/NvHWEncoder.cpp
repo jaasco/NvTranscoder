@@ -757,8 +757,8 @@ NVENCSTATUS CNvHWEncoder::CreateEncoder(EncodeConfig *pEncCfg)
 
     m_stCreateEncodeParams.darWidth = pEncCfg->width;
     m_stCreateEncodeParams.darHeight = pEncCfg->height;
-    m_stCreateEncodeParams.frameRateNum = pEncCfg->fps;
-    m_stCreateEncodeParams.frameRateDen = 1;
+    m_stCreateEncodeParams.frameRateNum = pEncCfg->frameRateNum;
+    m_stCreateEncodeParams.frameRateDen =  pEncCfg->frameRateDen;
     m_stCreateEncodeParams.enableEncodeAsync = 0;
 
     m_stCreateEncodeParams.enablePTD = 1;
@@ -1252,6 +1252,53 @@ NVENCSTATUS CNvHWEncoder::NvEncFlushEncoderQueue(void *hEOSEvent)
     return nvStatus;
 }
 
+int parse_fps(char * fps, int * frame_rate_num, int * frame_rate_den)
+{
+	if (strcmp(fps, "23.976") == 0)
+	{
+		*frame_rate_num = 24000;
+		*frame_rate_den = 1001;
+		return 1;
+	}
+	if (strcmp(fps, "24") == 0 || strcmp(fps, "24.0") == 0 || strcmp(fps, "24.00") == 0 || strcmp(fps, "24.000") == 0)
+	{
+		*frame_rate_num = 24000;
+		*frame_rate_den = 1000;
+		return 1;
+	}
+	if (strcmp(fps, "25") == 0 || strcmp(fps, "25.0") == 0 || strcmp(fps, "25.00") == 0 || strcmp(fps, "25.000") == 0)
+	{
+		*frame_rate_num = 25000;
+		*frame_rate_den = 1000;
+		return 1;
+	}
+	if (strcmp(fps, "29.97") == 0 || strcmp(fps, "29.970") == 0)
+	{
+		*frame_rate_num = 30000;
+		*frame_rate_den = 1001;
+		return 1;
+	}
+	if (strcmp(fps, "30") == 0  || strcmp(fps, "30.0") == 0 || strcmp(fps, "30.00") == 0 || strcmp(fps, "30.000") == 0)
+	{
+		*frame_rate_num = 30000;
+		*frame_rate_den = 1000;
+		return 1;
+	}
+	if (strcmp(fps, "59.94") == 0 || strcmp(fps, "59.940") == 0)
+	{
+		*frame_rate_num = 60000;
+		*frame_rate_den = 1001;
+		return 1;
+	}
+	if (strcmp(fps, "60") == 0 || strcmp(fps, "60.0") == 0 || strcmp(fps, "60.00") == 0 || strcmp(fps, "60.000") == 0)
+	{
+		*frame_rate_num = 60000;
+		*frame_rate_den = 1000;
+		return 1;
+	}
+	return 0;
+}
+
 NVENCSTATUS CNvHWEncoder::ParseArguments(EncodeConfig *encodeConfig, int argc, char *argv[])
 {
     for (int i = 1; i < argc; i++)
@@ -1337,11 +1384,19 @@ NVENCSTATUS CNvHWEncoder::ParseArguments(EncodeConfig *encodeConfig, int argc, c
         }
         else if (stricmp(argv[i], "-fps") == 0)
         {
-            if (++i >= argc || sscanf(argv[i], "%d", &encodeConfig->fps) != 1)
+            if (++i >= argc)
             {
                 PRINTERR("invalid parameter for %s\n", argv[i - 1]);
                 return NV_ENC_ERR_INVALID_PARAM;
             }
+			encodeConfig->fps = argv[i];
+			printf("fps is %s\n", encodeConfig->fps);
+
+			if (!parse_fps(encodeConfig->fps, &encodeConfig->frameRateNum, &encodeConfig->frameRateDen))
+			{
+                PRINTERR("Unsupported value for fps. Supported values list is:\n 23.976, 24, 25, 29.97, 30, 59.94, 60 \n");
+                return NV_ENC_ERR_INVALID_PARAM;
+			}
         }
         else if (stricmp(argv[i], "-startf") == 0)
         {

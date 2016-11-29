@@ -41,7 +41,9 @@ typedef struct _EncodeConfig
     int              height;
     int              maxWidth;
     int              maxHeight;
-    int              fps;
+    char*            fps;
+	int              frameRateNum;
+	int              frameRateDen;
     int              bitrate;
     int              vbvMaxBitrate;
     int              vbvSize;
