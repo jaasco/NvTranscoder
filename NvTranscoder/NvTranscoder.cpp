@@ -9,14 +9,16 @@
 #include <string.h>
 #include "dynlink_cuda.h"    // <cuda.h>
 
+#include "StreamCudaDecoder.h"
 #include "VideoDecoder.h"
 #include "VideoEncoder.h"
 #include "../common/inc/nvUtils.h"
 
 #ifdef _WIN32
+
 DWORD WINAPI DecodeProc(LPVOID lpParameter)
 {
-    CudaDecoder* pDecoder = (CudaDecoder*)lpParameter;
+    StreamCudaDecoder* pDecoder = (StreamCudaDecoder*)lpParameter;
     pDecoder->Start();
 
     return 0;
@@ -57,14 +59,17 @@ int MatchFPS(const float fpsRatio, int decodedFrames, int encodedFrames)
 void PrintHelp()
 {
     printf("Usage : NvTranscoder \n"
-        "-i <string>                  Specify input .h264 file\n"
+        "-i <string>                  Specify input .h264 file. Use '-' for stdin.\n"
         "-o <string>                  Specify output bitstream file\n"
-       "-fps <float>                  Specify encoding frame rate\n"
+        "-fps <float>                 Specify encoding frame rate\n"
         "\n### Optional parameters ###\n"
         "-size <int int>              Specify output resolution <width height>\n"
         "-codec <integer>             Specify the codec \n"
         "                                 0: H264\n"
         "                                 1: HEVC\n"
+		"-inputCodec <integer>        Specify the input codec \n"
+		"                                 4: H264\n"
+		"                                 8: HEVC\n"
         "-preset <string>             Specify the preset for encoder settings\n"
         "                                 hq : nvenc HQ \n"
         "                                 hp : nvenc HP \n"
@@ -122,14 +127,20 @@ int main(int argc, char* argv[])
     encodeConfig.presetGUID = NV_ENC_PRESET_DEFAULT_GUID;
     encodeConfig.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
 
-    NVENCSTATUS nvStatus = CNvHWEncoder::ParseArguments(&encodeConfig, argc, argv);
+	CUVIDEOFORMAT decodeFormat;
+	memset(&decodeFormat, 0, sizeof(CUVIDEOFORMAT));
+
+
+
+
+    NVENCSTATUS nvStatus = CNvHWEncoder::ParseArguments(&decodeFormat, &encodeConfig, argc, argv);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         PrintHelp();
         return 1;
     }
 
-    if (!encodeConfig.inputFileName || !encodeConfig.outputFileName || !encodeConfig.fps)
+    if (!encodeConfig.inputFileName || !encodeConfig.outputFileName || !encodeConfig.fps || !decodeFormat.codec)
     {
         PrintHelp();
         return 1;
@@ -153,29 +164,17 @@ int main(int argc, char* argv[])
     __cu(cuCtxPopCurrent(&curCtx));
     __cu(cuvidCtxLockCreate(&ctxLock, curCtx));
 
-    CudaDecoder* pDecoder   = new CudaDecoder;
+	StreamCudaDecoder* pDecoder = new StreamCudaDecoder;
+	
     FrameQueue* pFrameQueue = new CUVIDFrameQueue(ctxLock);
-    pDecoder->InitVideoDecoder(encodeConfig.inputFileName, ctxLock, pFrameQueue, encodeConfig.width, encodeConfig.height);
+    pDecoder->InitVideoDecoder(&decodeFormat, ctxLock, pFrameQueue, encodeConfig.width, encodeConfig.height);
 
     int decodedW, decodedH, decodedFRN, decodedFRD, isProgressive;
-    pDecoder->GetCodecParam(&decodedW, &decodedH, &decodedFRN, &decodedFRD, &isProgressive);
-    if (decodedFRN <= 0 || decodedFRD <= 0) {
-        decodedFRN = 30;
-        decodedFRD = 1;
-    }
+	decodedFRN = encodeConfig.frameRateNum;
+	decodedFRD = encodeConfig.frameRateDen;
 
-    if(encodeConfig.width <= 0 || encodeConfig.height <= 0) {
-        encodeConfig.width  = decodedW;
-        encodeConfig.height = decodedH;
-    }
-
-    float fpsRatio = 1.f;
-    if (encodeConfig.fps <= 0) {
-        encodeConfig.fps = decodedFRN / decodedFRD;
-    }
-    else {
-        fpsRatio = (float)encodeConfig.fps * decodedFRD / decodedFRN;
-    }
+    float fpsRatio = (float)(encodeConfig.frameRateNum / encodeConfig.frameRateDen * decodedFRD / decodedFRN);
+    
 
     encodeConfig.pictureStruct = (isProgressive ? NV_ENC_PIC_STRUCT_FRAME : 0);
     pFrameQueue->init(encodeConfig.width, encodeConfig.height);

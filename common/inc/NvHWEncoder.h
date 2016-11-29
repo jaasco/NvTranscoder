@@ -17,6 +17,7 @@
 
 #include "nvEncodeAPI.h"
 #include "nvUtils.h"
+#include <dynlink_nvcuvid.h>
 
 #define SET_VER(configStruct, type) {configStruct.version = type##_VER;}
 
@@ -227,7 +228,7 @@ public:
     NVENCSTATUS                                          FlushEncoder();
     NVENCSTATUS                                          ValidateEncodeGUID(GUID inputCodecGuid);
     NVENCSTATUS                                          ValidatePresetGUID(GUID presetCodecGuid, GUID inputCodecGuid);
-    static NVENCSTATUS                                   ParseArguments(EncodeConfig *encodeConfig, int argc, char *argv[]);
+    static NVENCSTATUS                                   ParseArguments(CUVIDEOFORMAT *decodeFormat, EncodeConfig *encodeConfig, int argc, char *argv[]);
 };
 
 typedef NVENCSTATUS (NVENCAPI *MYPROC)(NV_ENCODE_API_FUNCTION_LIST*); 

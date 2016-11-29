@@ -1299,7 +1299,7 @@ int parse_fps(char * fps, int * frame_rate_num, int * frame_rate_den)
 	return 0;
 }
 
-NVENCSTATUS CNvHWEncoder::ParseArguments(EncodeConfig *encodeConfig, int argc, char *argv[])
+NVENCSTATUS CNvHWEncoder::ParseArguments(CUVIDEOFORMAT *decodeFormat, EncodeConfig *encodeConfig, int argc, char *argv[])
 {
     for (int i = 1; i < argc; i++)
     {
@@ -1343,6 +1343,12 @@ NVENCSTATUS CNvHWEncoder::ParseArguments(EncodeConfig *encodeConfig, int argc, c
                 PRINTERR("invalid parameter for %s\n", argv[i - 2]);
                 return NV_ENC_ERR_INVALID_PARAM;
             }
+			decodeFormat->coded_width = encodeConfig->width;
+			decodeFormat->coded_height = encodeConfig->height;
+			decodeFormat->display_area.left = 0;
+			decodeFormat->display_area.top = 0;
+			decodeFormat->display_area.right = encodeConfig->width;
+			decodeFormat->display_area.bottom = encodeConfig->height;
         }
         else if (stricmp(argv[i], "-maxSize") == 0)
         {
@@ -1562,7 +1568,19 @@ NVENCSTATUS CNvHWEncoder::ParseArguments(EncodeConfig *encodeConfig, int argc, c
                 return NV_ENC_ERR_INVALID_PARAM;
             }
             encodeConfig->inputFormat = aFormatTable[inputFormatIndex];
+			decodeFormat->chroma_format = cudaVideoChromaFormat_420; //TODO сделать нормально
         }
+		else if (stricmp(argv[i], "-inputCodec") == 0)
+		{
+			int inputFormatIndex = 0;
+			cudaVideoCodec aCodecTable[] = { cudaVideoCodec_H264, cudaVideoCodec_HEVC };
+			if (++i >= argc || sscanf(argv[i], "%d", &inputFormatIndex) != 1 || inputFormatIndex < 0 || inputFormatIndex >= (sizeof(aCodecTable) / sizeof(aCodecTable[0])))
+			{
+				PRINTERR("invalid parameter for %s\n", argv[i - 1]);
+				return NV_ENC_ERR_INVALID_PARAM;
+			}
+			decodeFormat->codec = aCodecTable[inputFormatIndex];
+		}
         else if (stricmp(argv[i], "-qpDeltaMapFile") == 0)
         {
             if (++i >= argc)
