@@ -1,0 +1,11 @@
+/FrameQueue.obj
+/dynlink_cuda.obj
+/dynlink_nvcuvid.obj
+/NvHWEncoder.obj
+/NvTranscoder.obj
+/NvTranscoder_2010.log
+/StreamCudaDecoder.obj
+/VideoDecoder.obj
+/VideoEncoder.obj
+/vc140.idb
+/vc140.pdb
